@@ -1,0 +1,3 @@
+classdef ThrustModel < BottleRocket
+    
+end
