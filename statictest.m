@@ -6,6 +6,7 @@ classdef statictest
         freq
         emptymass
         watermass
+        g = 9.81;
     end
     methods
         function self = statictest(filename, samplefreq, emptymass, ...
@@ -93,6 +94,10 @@ classdef statictest
         end
         function rv = change(self)
             rv = max(diff(self.force));
+        end
+        function DV = deltaV(self)
+            DV = self.getImpulse() * self.g * ...
+                log((self.emptymass + self.watermass) / self.emptymass);
         end
     end
 end

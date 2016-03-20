@@ -3,7 +3,7 @@ function dmdt=mdot(t,vars,pressurefn,m_air, c_d,rho_water,p_atm,A,Vbottle,gamma,
 % First section: depends on pressure differential?
 % Second section: depends on whether the flow is choked or not. The flow is
 %   choked if $p > p_*$ where $$ p_* = p \left ( \frac{2}{\gamma +1} \right
-%   )^\frac{\gamma}{\gamma -1}
+%   )^\frac{\gamma}{\gamma -1}$$
 % Third section: is zero
 global stage;
 
