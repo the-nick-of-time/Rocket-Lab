@@ -1,13 +1,13 @@
 classdef IspModel < BottleRocket
-    properties(Access = {?BottleRocket})
+    properties%(Access = {?BottleRocket})
         staticdata
-        type = 1 + rand(1);
+        ID = 1 + rand(1);
     end
     methods
         function self = IspModel(data, ri, theta, m_bottle, c_d, A, mu,...
-                T_atm, P_atm)
+                T_atm, P_atm, wind)
             self.staticdata = data;
-            self.initialheading = [0 cos(theta) sin(theta)];
+            self.initialheading = [0 cosd(theta) sind(theta)];
             vi = self.staticdata.deltaV() * self.initialheading;
             self.vx = vi(1);
             self.vy = vi(2);
@@ -21,9 +21,10 @@ classdef IspModel < BottleRocket
             self.A = A;
             self.mu = mu;
             
-            self.T_atm = T_atm;
+            self.T_atm = T_atm + 273.15;
             self.P_atm = P_atm;
-            self.rho_atm = P_atm / (self.R * T_atm);
+            self.rho_atm = P_atm / (self.R * self.T_atm);
+            self.wind_data = wind;
         end
         function m = mass(self)
             m = self.m_bottle + self.rho_atm * self.volume;
@@ -32,14 +33,28 @@ classdef IspModel < BottleRocket
             T = [0 0 0];
         end
         function update(self, t, vars)
-            l = length(self.vx) + 1;
-            self.vx(l) = vars(1);
-            self.vy(l) = vars(2);
-            self.vz(l) = vars(3);
-            self.x(l) = vars(4);
-            self.y(l) = vars(5);
-            self.z(l) = vars(6);
-            self.t(l) = t;
+%             l = length(self.vx) + 1;
+%             self.vx(l) = vars(1);
+%             self.vy(l) = vars(2);
+%             self.vz(l) = vars(3);
+%             self.x(l) = vars(4);
+%             self.y(l) = vars(5);
+%             self.z(l) = vars(6);
+%             self.t(l) = t;
+            self.vx = [self.vx;vars(1)];
+            self.vy = [self.vy;vars(2)];
+            self.vz = [self.vz;vars(3)];
+            self.x = [self.x;vars(4)];
+            self.y = [self.y;vars(5)];
+            self.z = [self.z;vars(6)];
+            self.t = [self.t;t];
+%             self.vx = vars(1);
+%             self.vy = vars(2);
+%             self.vz = vars(3);
+%             self.x = vars(4);
+%             self.y = vars(5);
+%             self.z = vars(6);
+%             self.t = t;
         end
         function DYDT = derivatives(self, t, vars)
             % Elements of the vector:
@@ -73,13 +88,14 @@ classdef IspModel < BottleRocket
                     'vz', 'z velocity';
                     'v', 'speed';
                     't', 'time'};
+            [~, v] = self.normalizeV(false);
             vars = {self.x;
                     self.y;
                     self.z;
                     self.vx;
                     self.vy;
                     self.vz;
-                    self.v;
+                    v;
                     self.t};
             titles = {'Cross Range Distance';
                       'Range Distance';
@@ -97,6 +113,15 @@ classdef IspModel < BottleRocket
                      'm/s';
                      'm/s';
                      's'};
+        end
+        function rv = initialconditions(self)
+            rv = [ self.vx;
+                   self.vy;
+                   self.vz;
+                   self.x;
+                   self.y;
+                   self.z
+                 ];
         end
     end
 end

@@ -2,11 +2,11 @@ classdef ThrustModel < BottleRocket
     properties(Access = {?BottleRocket})
         m_fuel
         staticdata
-        type = 2 + rand(1);
+        ID = 2 + rand(1);
     end
     methods
         function self = Thrustmodel(staticdata, vi, ri, theta, m_bottle,...
-                c_d, A, mu, T_atm, P_atm, m_water, P_bottle)
+                c_d, A, mu, T_atm, P_atm, m_water, P_bottle, wind)
             self.vx = vi(1);
             self.vy = vi(2);
             self.vz = vi(3);
@@ -24,9 +24,10 @@ classdef ThrustModel < BottleRocket
             self.A = A;
             self.mu = mu;
             
-            self.T_atm = T_atm;
+            self.T_atm = T_atm + 273.15;
             self.P_atm = P_atm;
-            self.rho_atm = P_atm / (self.R * T_atm);
+            self.rho_atm = P_atm / (self.R * self.T_atm);
+            self.wind_data = wind;
         end
         function m = mass(self)
             m = self.m_fuel + self.m_bottle;
@@ -37,6 +38,7 @@ classdef ThrustModel < BottleRocket
             %   thrusting. this would need to verify the current value of T
             %   2. exhaust velocity is assumed constant. mdot can be
             %   extracted from thrust data.
+            dmdt = self.statictest.masschange();
         end
         function T = thrust(self, t, ~)
             dir = self.normalizeV(true);
@@ -87,13 +89,14 @@ classdef ThrustModel < BottleRocket
                     'v', 'speed';
                     'm', 'mass';
                     't', 'time'};
+            [~, v] = self.normalizeV(false);
             vars = {self.x;
                     self.y;
                     self.z;
                     self.vx;
                     self.vy;
                     self.vz;
-                    self.v;
+                    v;
                     self.mass();
                     self.t};
             titles = {'Cross Range Distance';
@@ -114,6 +117,16 @@ classdef ThrustModel < BottleRocket
                      'm/s';
                      'kg';
                      's'};
+        end
+        function rv = initialconditions(self)
+            rv = [ self.vx;
+                   self.vy;
+                   self.vz;
+                   self.x;
+                   self.y;
+                   self.z;
+                   self.m_fuel
+                 ];
         end
     end
 end

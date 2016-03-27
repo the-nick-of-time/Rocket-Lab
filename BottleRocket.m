@@ -1,5 +1,5 @@
-classdef (Abstract=true) BottleRocket
-    properties(Access = 'protected')
+classdef (Abstract=true) BottleRocket < handle
+    properties%(Access = 'protected')
         % position and velocity
         vx
         vy
@@ -25,7 +25,7 @@ classdef (Abstract=true) BottleRocket
         gamma = 1.4;
         rho_water = 1000;
         % time from integration
-        t
+        t = 0;
     end
     methods
         function D = drag(self)
@@ -33,9 +33,9 @@ classdef (Abstract=true) BottleRocket
             D = .5 * self.rho_atm * mag^2 * self.c_d * self.A * (-dir);
         end
         function dvdt = vdot(self)
-            dir = normalizeV(true);
-            dvdt = (self.thrust() + self.drag() + ...
-                dot(self.weight(), dir) * dir) / self.mass();
+            dir = self.relativeV();
+            dvdt = (self.thrust() + self.drag() + self.weight()) ...
+                / self.mass();
         end
         function [vhat, vmag] = normalizeV(self, onlyLatest)
             if onlyLatest
@@ -58,13 +58,14 @@ classdef (Abstract=true) BottleRocket
         function f = friction(self)
             railLength = 1; %measure and change later
             if norm([self.x self.y self.z]) < railLength
-                f = self.mu * dot(self.weight(), self.initialheading);
+                f = self.mu * dot(self.weight(), self.initialheading) * ...
+                    self.initialheading;
             else
                 f = [0 0 0];
             end
         end
         function w = windV(self)
-            if self.z < 1
+            if self.z(end) < 1
                 % near the ground the wind speed is zero. This is primarily
                 % to account for the impossibility of reorientation on the
                 % stand.
@@ -80,7 +81,7 @@ classdef (Abstract=true) BottleRocket
                 % assume that the wind speed varies linearly over the 
                 % entire height of the flight (save that first meter)
                 if dh ~= 0
-                    w = v1 + self.z * (dv/dh);
+                    w = v1 + self.z(end) * (dv/dh);
                 else
                     w = [0 0 0];
                 end
@@ -98,7 +99,7 @@ classdef (Abstract=true) BottleRocket
             W = self.mass() * self.g;
         end
         function [value, isterminal, direction] = endcondition(~, ~, vars)
-            value = vars(3);
+            value = vars(6);
             isterminal = 1;
             direction = -1;
         end
@@ -107,11 +108,11 @@ classdef (Abstract=true) BottleRocket
                 error('Variables must be different')
             end
             
-            [opts, vars, titles, units] = self.maps(xvar, yvar);
+            [opts, vars, titles, units] = self.maps();
             
-            tempx = find(sum(strcmpi(xvar, opts), 2));
-            tempy = find(sum(strcmpi(yvar, opts), 2));
-            if ~any(tempx) || ~any(tempy)
+            [tempx, ~] = find(strcmpi(xvar, opts));
+            [tempy, ~] = find(strcmpi(yvar, opts));
+            if ~numel(tempx) || ~numel(tempy)
                 error('Use valid variable identifiers')
             else
                 X = vars{tempx};
@@ -132,8 +133,13 @@ classdef (Abstract=true) BottleRocket
             xlabel(XLABEL)
             ylabel(YLABEL)
         end
-        function rv = Type(self)
-            rv = self.type;
+        function rv = type(self)
+            rv = self.ID;
+        end
+        function rv = get(self, which)
+            [opts, vars] = self.maps();
+            [where, ~] = find(strcmpi(which, opts));
+            rv = vars{where};
         end
     end
     methods (Abstract)
@@ -142,6 +148,6 @@ classdef (Abstract=true) BottleRocket
         maps(self) %does the plotting thing
         derivatives(self, t, vars) %returns vector of derivatives for ode45
         update(self, t, vars) %updates self variables after an ode45 step
-%         Type(self) %returns a double identifying the object
+        initialconditions(self) %returns the initial condition vector
     end
 end

@@ -8,14 +8,14 @@ classdef ThermoModel < BottleRocket
         P_bottle
         P_bottle_i
         Pstar
-        A_throat% = a number
-        discharge% = a number
+        A_throat = pi * .0105 ^ 2;
+        discharge = .8;
         stage = 1;
-        type = 3 + rand(1);
+        ID = 3 + rand(1);
     end
     methods
         function self = ThermoModel(vi, ri, theta, m_air, m_water, V_air,...
-                P_bottle, m_bottle, c_d, A, mu, T_atm, P_atm)
+                P_bottle, m_bottle, c_d, A, mu, T_atm, P_atm, wind)
             self.vx = vi(1);
             self.vy = vi(2);
             self.vz = vi(3);
@@ -38,7 +38,8 @@ classdef ThermoModel < BottleRocket
             
             self.T_atm = T_atm + 273.15;
             self.P_atm = P_atm;
-            self.rho_atm = P_atm / (self.R * T_atm);
+            self.rho_atm = P_atm / (self.R * self.T_atm);
+            self.wind_data = wind;
         end
         function setstage(self)
             switch self.stage
@@ -126,8 +127,16 @@ classdef ThermoModel < BottleRocket
                     dmdt = 0;
             end
         end
-        function Vdot(self)
-            
+        function dVdt = Vdot(self)
+            switch self.stage
+                case 1
+                    dVdt = self.discharge * self.A_throat * ...
+                        sqrt((2/self.rho_water) * ((self.P_bottle_i * ...
+                        (self.V_air_i/self.V_air)^self.gamma) - ...
+                        self.P_atm));
+                otherwise
+                    dVdt = 0;
+            end
         end
         function DYDT = derivatives(self, t, vars)
             % output    input
@@ -211,13 +220,14 @@ classdef ThermoModel < BottleRocket
                     'm_a', 'air mass';
                     'm_w', 'water mass';
                     't', 'time'};
+            [~, v] = self.normalizeV(false);
             vars = {self.x;
                     self.y;
                     self.z;
                     self.vx;
                     self.vy;
                     self.vz;
-                    self.v;
+                    v;
                     self.mass();
                     self.V_air;
                     self.m_air;
@@ -247,6 +257,18 @@ classdef ThermoModel < BottleRocket
                      'kg';
                      'kg';
                      's'};
+        end
+        function rv = initialconditions(self)
+            rv = [ self.vx;
+                   self.vy;
+                   self.vz;
+                   self.x;
+                   self.y;
+                   self.z;
+                   self.m_air;
+                   self.m_water;
+                   self.V_air
+                 ];
         end
     end
 end

@@ -74,7 +74,7 @@ classdef statictest
                 fl = self.force(floor(desiredindex));
                 fu = self.force(ceil(desiredindex));
                 rm = mod(desiredindex, 1);
-                F = fl + (fu - fl) / rm;
+                F = fl + (fu - fl) * rm;
             end
         end
         function makeplot(self, everything)
@@ -98,6 +98,13 @@ classdef statictest
         function DV = deltaV(self)
             DV = self.getImpulse() * self.g * ...
                 log((self.emptymass + self.watermass) / self.emptymass);
+        end
+        function DmDt = masschange(self)
+            ind = self.isolate();
+            Dt = length(ind) * self.freq;
+            Dm = self.watermass;
+            
+            DmDt = Dm / Dt;
         end
     end
 end

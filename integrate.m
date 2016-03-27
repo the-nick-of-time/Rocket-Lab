@@ -1,15 +1,17 @@
-function integrate(init_cond, derivsfn, rocket)
+function integrate(rocket)
 
-switch length(init_cond)
-    case 6
+switch floor(rocket.type())
+    case 1
         % Isp model
-        
-    case 7
+        opts = odeset('Events', @rocket.endcondition);
+    case 2
         % Thrust model
-        
-    case 9
+        opts = odeset('Events', @rocket.endcondition);
+    case 3
         % Thermodynamic model
-        odeset('NonNegative',[0 0 0 0 0 0 1 1 1],...
-            'Events', @object.endcondition);
+        opts = odeset('NonNegative',[0 0 0 0 0 0 1 1 1],...
+            'Events', @rocket.endcondition);
 end
+trange = [0 20];
+ode45(@rocket.derivatives, trange, rocket.initialconditions(), opts);
 end
