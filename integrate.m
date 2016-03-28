@@ -13,5 +13,6 @@ switch floor(rocket.type())
             'Events', @rocket.endcondition);
 end
 trange = [0 20];
-ode45(@rocket.derivatives, trange, rocket.initialconditions(), opts);
+[t, vars] = ode45(@rocket.derivatives, trange, rocket.initialconditions(), opts);
+rocket.finalize(t, vars);
 end

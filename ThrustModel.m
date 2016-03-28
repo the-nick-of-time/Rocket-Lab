@@ -5,7 +5,7 @@ classdef ThrustModel < BottleRocket
         ID = 2 + rand(1);
     end
     methods
-        function self = Thrustmodel(staticdata, vi, ri, theta, m_bottle,...
+        function self = ThrustModel(staticdata, vi, ri, theta, m_bottle,...
                 c_d, A, mu, T_atm, P_atm, m_water, P_bottle, wind)
             self.vx = vi(1);
             self.vy = vi(2);

@@ -29,7 +29,7 @@ classdef (Abstract=true) BottleRocket < handle
     end
     methods
         function D = drag(self)
-            [dir, mag] = self.normalizeV(true);
+            [dir, mag] = self.relativeV();
             D = .5 * self.rho_atm * mag^2 * self.c_d * self.A * (-dir);
         end
         function dvdt = vdot(self)
@@ -139,7 +139,11 @@ classdef (Abstract=true) BottleRocket < handle
         function rv = get(self, which)
             [opts, vars] = self.maps();
             [where, ~] = find(strcmpi(which, opts));
-            rv = vars{where};
+            if numel(where)
+                rv = vars{where};
+            else
+                %check other vars
+            end
         end
     end
     methods (Abstract)

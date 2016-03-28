@@ -23,7 +23,7 @@ classdef IspModel < BottleRocket
             
             self.T_atm = T_atm + 273.15;
             self.P_atm = P_atm;
-            self.rho_atm = P_atm / (self.R * self.T_atm);
+            self.rho_atm = self.P_atm / (self.R * self.T_atm);
             self.wind_data = wind;
         end
         function m = mass(self)
@@ -122,6 +122,15 @@ classdef IspModel < BottleRocket
                    self.y;
                    self.z
                  ];
+        end
+        function finalize(self, t, vars)
+            self.vx = vars(:,1);
+            self.vy = vars(:,2);
+            self.vz = vars(:,3);
+            self.x = vars(:,4);
+            self.y = vars(:,5);
+            self.z = vars(:,6);
+            self.t = t;
         end
     end
 end

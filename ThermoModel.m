@@ -8,7 +8,7 @@ classdef ThermoModel < BottleRocket
         P_bottle
         P_bottle_i
         Pstar
-        A_throat = pi * .0105 ^ 2;
+        A_throat = pi * (21.67e-3 / 2) ^ 2;
         discharge = .8;
         stage = 1;
         ID = 3 + rand(1);
@@ -269,6 +269,9 @@ classdef ThermoModel < BottleRocket
                    self.m_water;
                    self.V_air
                  ];
+        end
+        function finalize(self, t, vars)
+            
         end
     end
 end
