@@ -71,8 +71,8 @@ classdef statictest
             if desiredindex > (indices(end) - indices(1))
                 F = 0;
             else
-                fl = self.force(floor(desiredindex) + 1);
-                fu = self.force(ceil(desiredindex) + 1);
+                fl = self.force(floor(desiredindex));
+                fu = self.force(ceil(desiredindex));
                 rm = mod(desiredindex, 1);
                 F = fl + (fu - fl) * rm;
             end

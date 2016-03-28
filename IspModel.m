@@ -26,10 +26,10 @@ classdef IspModel < BottleRocket
             self.rho_atm = P_atm / (self.R * self.T_atm);
             self.wind_data = wind;
         end
-        function m = mass(self, ~)
+        function m = mass(self)
             m = self.m_bottle + self.rho_atm * self.volume;
         end
-        function T = thrust(~, ~, ~)
+        function T = thrust(~)
             T = [0 0 0];
         end
         function update(self, t, vars)
@@ -48,6 +48,13 @@ classdef IspModel < BottleRocket
             self.y = [self.y;vars(5)];
             self.z = [self.z;vars(6)];
             self.t = [self.t;t];
+%             self.vx = vars(1);
+%             self.vy = vars(2);
+%             self.vz = vars(3);
+%             self.x = vars(4);
+%             self.y = vars(5);
+%             self.z = vars(6);
+%             self.t = t;
         end
         function DYDT = derivatives(self, t, vars)
             % Elements of the vector:
@@ -62,7 +69,7 @@ classdef IspModel < BottleRocket
             
             self.update(t, vars);
             
-            a = self.vdot(t, vars);
+            a = self.vdot();
             
             DYDT = [ a(1);
                      a(2);
@@ -115,15 +122,6 @@ classdef IspModel < BottleRocket
                    self.y;
                    self.z
                  ];
-        end
-        function finalize(self, t, vars)
-            self.t = t;
-            self.vx = vars(:,1);
-            self.vy = vars(:,2);
-            self.vz = vars(:,3);
-            self.x = vars(:,4);
-            self.y = vars(:,5);
-            self.z = vars(:,6);
         end
     end
 end

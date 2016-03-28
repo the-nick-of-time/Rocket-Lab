@@ -32,10 +32,10 @@ classdef (Abstract=true) BottleRocket < handle
             [dir, mag] = self.normalizeV(true);
             D = .5 * self.rho_atm * mag^2 * self.c_d * self.A * (-dir);
         end
-        function dvdt = vdot(self, t, vars)
+        function dvdt = vdot(self)
             dir = self.relativeV();
-            dvdt = (self.thrust(t, vars) + self.drag() + self.weight()) ...
-                / self.mass(true);
+            dvdt = (self.thrust() + self.drag() + self.weight()) ...
+                / self.mass();
         end
         function [vhat, vmag] = normalizeV(self, onlyLatest)
             if onlyLatest
@@ -48,9 +48,7 @@ classdef (Abstract=true) BottleRocket < handle
             
             for i = 1:size(v, 1)
                 vmag(i) = norm(v(i,:));
-                if norm([self.x self.y self.z]) < 1
-                    vhat = self.initialheading;
-                elseif vmag(i) > 0
+                if vmag(i) > 0
                     vhat(i,:) = v(i,:) / vmag(i);
                 else
                     vhat(i,:) = [0 0 0];
@@ -98,7 +96,7 @@ classdef (Abstract=true) BottleRocket < handle
             vhat = v_r / vmag;
         end
         function W = weight(self)
-            W = self.mass(true) * self.g;
+            W = self.mass() * self.g;
         end
         function [value, isterminal, direction] = endcondition(~, ~, vars)
             value = vars(6);
@@ -134,8 +132,6 @@ classdef (Abstract=true) BottleRocket < handle
             title(TITLE)
             xlabel(XLABEL)
             ylabel(YLABEL)
-            
-            print(fig, '-dpng', ['./figures/' TITLE '.png'])
         end
         function rv = type(self)
             rv = self.ID;
@@ -148,11 +144,10 @@ classdef (Abstract=true) BottleRocket < handle
     end
     methods (Abstract)
         thrust(self, t, vars) %outputs thrust as a vector along the correct direction
-        mass(self, onlyend) %outputs mass of the whole system as kg
+        mass(self) %outputs mass of the whole system as kg
         maps(self) %does the plotting thing
         derivatives(self, t, vars) %returns vector of derivatives for ode45
         update(self, t, vars) %updates self variables after an ode45 step
         initialconditions(self) %returns the initial condition vector
-        finalize(self, t, vars) %performs final update of integration vars
     end
 end

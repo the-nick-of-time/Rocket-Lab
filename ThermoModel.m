@@ -22,7 +22,7 @@ classdef ThermoModel < BottleRocket
             self.x = ri(1);
             self.y = ri(2);
             self.z = ri(3);
-            self.initialheading = [0 cosd(theta) sind(theta)];
+            self.initialheading = [0 cos(theta) sin(theta)];
             
             self.m_air = m_air;
             self.m_air_i = m_air;
@@ -153,7 +153,7 @@ classdef ThermoModel < BottleRocket
             self.update(t, vars)
             self.setstage()
             
-            a = self.vdot(t,vars);
+            a = self.vdot();
             
             DYDT = [ a(1);
                      a(2);
@@ -269,18 +269,6 @@ classdef ThermoModel < BottleRocket
                    self.m_water;
                    self.V_air
                  ];
-        end
-        function finalize(self, t, vars)
-            self.t = t;
-            self.vx = vars(:,1);
-            self.vy = vars(:,2);
-            self.vz = vars(:,3);
-            self.x = vars(:,4);
-            self.y = vars(:,5);
-            self.z = vars(:,6);
-            self.m_air = vars(:,7);
-            self.m_water = vars(:,8);
-            self.V_air = vars(:,9);
         end
     end
 end
