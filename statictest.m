@@ -22,9 +22,10 @@ classdef statictest
             end
         end
         function indices = isolate(self)
-            startpoint = find(diff(self.force) > 12, 1);
-            endpoint = find(self.force == min(self.force(startpoint+1:end)));
-            indices = startpoint:endpoint;
+            startpoint = find((self.force) > 20, 1);
+            [~, highpoint] = max(self.force);
+            [~, relativeendpoint] = min(self.force(highpoint:end));
+            indices = startpoint:(startpoint+relativeendpoint);
         end
         function rv = getForce(self, which)
             if nargin == 1 || strcmpi(which, 't') || ...
@@ -63,18 +64,22 @@ classdef statictest
                     base(x+1)) * (1 / self.freq);
             end
             % Assumes that the mass of the air is negligible
-            Isp = I / (self.watermass * 9.807);
+            Isp = I / (self.watermass * self.g);
         end
         function F = interpolate(self, time)
             desiredindex = time * self.freq;
             indices = self.isolate();
-            if desiredindex > (indices(end) - indices(1))
+            first = indices(1);
+            DF = self.force(indices(end)) - self.force(1);
+            DT = length(indices) / self.freq;
+            base = (DF/DT) * time + self.force(1);
+            if desiredindex > length(indices)
                 F = 0;
             else
-                fl = self.force(floor(desiredindex));
-                fu = self.force(ceil(desiredindex));
+                fl = self.force(floor(desiredindex + first));
+                fu = self.force(ceil(desiredindex + first));
                 rm = mod(desiredindex, 1);
-                F = fl + (fu - fl) * rm;
+                F = fl + (fu - fl) * rm - base;
             end
         end
         function makeplot(self, everything)

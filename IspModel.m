@@ -1,5 +1,5 @@
 classdef IspModel < BottleRocket
-    properties%(Access = {?BottleRocket})
+    properties(Access = {?BottleRocket})
         staticdata
         ID = 1 + rand(1);
     end
@@ -26,35 +26,21 @@ classdef IspModel < BottleRocket
             self.rho_atm = self.P_atm / (self.R * self.T_atm);
             self.wind_data = wind;
         end
-        function m = mass(self)
+        function m = mass(self, ~)
             m = self.m_bottle + self.rho_atm * self.volume;
         end
         function T = thrust(~)
             T = [0 0 0];
         end
         function update(self, t, vars)
-%             l = length(self.vx) + 1;
-%             self.vx(l) = vars(1);
-%             self.vy(l) = vars(2);
-%             self.vz(l) = vars(3);
-%             self.x(l) = vars(4);
-%             self.y(l) = vars(5);
-%             self.z(l) = vars(6);
-%             self.t(l) = t;
-            self.vx = [self.vx;vars(1)];
-            self.vy = [self.vy;vars(2)];
-            self.vz = [self.vz;vars(3)];
-            self.x = [self.x;vars(4)];
-            self.y = [self.y;vars(5)];
-            self.z = [self.z;vars(6)];
-            self.t = [self.t;t];
-%             self.vx = vars(1);
-%             self.vy = vars(2);
-%             self.vz = vars(3);
-%             self.x = vars(4);
-%             self.y = vars(5);
-%             self.z = vars(6);
-%             self.t = t;
+            l = length(self.vx) + 1;
+            self.vx(l,1) = vars(1);
+            self.vy(l,1) = vars(2);
+            self.vz(l,1) = vars(3);
+            self.x(l,1) = vars(4);
+            self.y(l,1) = vars(5);
+            self.z(l,1) = vars(6);
+            self.t(l,1) = t;
         end
         function DYDT = derivatives(self, t, vars)
             % Elements of the vector:

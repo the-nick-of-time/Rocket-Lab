@@ -1,5 +1,5 @@
 classdef (Abstract=true) BottleRocket < handle
-    properties%(Access = 'protected')
+    properties(Access = 'protected')
         % position and velocity
         vx
         vy
@@ -14,6 +14,7 @@ classdef (Abstract=true) BottleRocket < handle
         A
         mu
         volume = 2048e-6;
+        raillength = 1;
         % atmospheric parameters
         T_atm
         P_atm
@@ -33,9 +34,8 @@ classdef (Abstract=true) BottleRocket < handle
             D = .5 * self.rho_atm * mag^2 * self.c_d * self.A * (-dir);
         end
         function dvdt = vdot(self)
-            dir = self.relativeV();
-            dvdt = (self.thrust() + self.drag() + self.weight()) ...
-                / self.mass();
+            dvdt = (self.thrust() + self.drag() + self.weight() + ...
+                self.friction()) / self.mass(false);
         end
         function [vhat, vmag] = normalizeV(self, onlyLatest)
             if onlyLatest
@@ -56,19 +56,17 @@ classdef (Abstract=true) BottleRocket < handle
             end
         end
         function f = friction(self)
-            railLength = 1; %measure and change later
-            if norm([self.x self.y self.z]) < railLength
-                f = self.mu * dot(self.weight(), self.initialheading) * ...
-                    self.initialheading;
+            if self.onLaunchRail()
+                f = self.mu * norm(cross(self.weight(), ...
+                    self.initialheading)) * self.initialheading;
             else
                 f = [0 0 0];
             end
         end
         function w = windV(self)
-            if self.z(end) < 1
-                % near the ground the wind speed is zero. This is primarily
-                % to account for the impossibility of reorientation on the
-                % stand.
+            if self.onLaunchRail()
+                % when the rocket is on the rails, it cannot turn into the
+                % wind, so we don't care about the wind's actual value.
                 w = [0 0 0];
             else
                 v1 = self.wind_data(1,1:3);
@@ -93,10 +91,19 @@ classdef (Abstract=true) BottleRocket < handle
             
             v_r = rv - wv;
             vmag = norm(v_r);
-            vhat = v_r / vmag;
+            if vmag
+                vhat = v_r / vmag;
+            else
+                vhat = self.initialheading;
+            end
         end
         function W = weight(self)
-            W = self.mass() * self.g;
+            if self.onLaunchRail()
+                W = dot(self.mass(false) * self.g, self.initialheading)...
+                    * self.initialheading;
+            else
+                W = self.mass(false) * self.g;
+            end
         end
         function [value, isterminal, direction] = endcondition(~, ~, vars)
             value = vars(6);
@@ -129,9 +136,54 @@ classdef (Abstract=true) BottleRocket < handle
             end
             figure(fig)
             plot(X, Y, plotargs{:})
+            if strcmp(units{tempx}, units{tempy})
+                daspect([1 1 1])
+            end
             title(TITLE)
             xlabel(XLABEL)
             ylabel(YLABEL)
+            
+            print(fig, '-dpng', ['./figures/' TITLE '.png'])
+        end
+        function fig = makeplot3d(self, xvar, yvar, zvar, figureargs, plotargs, outfig)
+            if strcmpi(xvar, yvar) || strcmpi(xvar, zvar) || strcmpi(yvar, zvar)
+                error('Variables must be different')
+            end
+            
+            [opts, vars, titles, units] = self.maps();
+            
+            [tempx, ~] = find(strcmpi(xvar, opts));
+            [tempy, ~] = find(strcmpi(yvar, opts));
+            [tempz, ~] = find(strcmpi(zvar, opts));
+            if ~numel(tempx) || ~numel(tempy) || ~numel(tempz)
+                error('Use valid variable identifiers')
+            else
+                X = vars{tempx};
+                Y = vars{tempy};
+                Z = vars{tempz};
+                TITLE = sprintf('%s against %s and %s', titles{tempz}, titles{tempx}, titles{tempy});
+                XLABEL = sprintf('%s (%s)', titles{tempx}, units{tempx});
+                YLABEL = sprintf('%s (%s)', titles{tempy}, units{tempy});
+                ZLABEL = sprintf('%s (%s)', titles{tempz}, units{tempz});
+            end
+            
+            if nargin == 7
+                fig = outfig;
+            else
+                fig = figure(figureargs{:});
+            end
+            figure(fig)
+            plot3(X, Y, Z, plotargs{:})
+            if strcmp(units{tempx}, units{tempy}) && ...
+                    strcmp(units{tempy}, units{tempz})
+                daspect([1 1 1])
+            end
+            title(TITLE)
+            xlabel(XLABEL)
+            ylabel(YLABEL)
+            zlabel(ZLABEL)
+            
+            print(fig, '-dpng', ['./figures/' TITLE '.png'])
         end
         function rv = type(self)
             rv = self.ID;
@@ -145,13 +197,18 @@ classdef (Abstract=true) BottleRocket < handle
                 %check other vars
             end
         end
+        function rv = onLaunchRail(self)
+            s = norm([self.x(end) self.y(end) self.z(end)]);
+            rv = s <= self.raillength;
+        end
     end
     methods (Abstract)
         thrust(self, t, vars) %outputs thrust as a vector along the correct direction
-        mass(self) %outputs mass of the whole system as kg
+        mass(self, all) %outputs mass of the whole system as kg
         maps(self) %does the plotting thing
         derivatives(self, t, vars) %returns vector of derivatives for ode45
         update(self, t, vars) %updates self variables after an ode45 step
         initialconditions(self) %returns the initial condition vector
+        finalize(self, t, vars) %overwrites the raw integration data with clean
     end
 end
