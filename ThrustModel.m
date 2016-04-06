@@ -24,9 +24,9 @@ classdef ThrustModel < BottleRocket
             self.A = A;
             self.mu = mu;
             
-            self.T_atm = T_atm + 273.15;
+            self.T_atm = T_atm;
             self.P_atm = P_atm;
-            self.rho_atm = P_atm / (self.R * self.T_atm);
+            self.rho_atm = P_atm / (self.R * T_atm);
             self.wind_data = wind;
         end
         function m = mass(self, all)

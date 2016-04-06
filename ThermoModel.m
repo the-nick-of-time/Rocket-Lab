@@ -12,6 +12,7 @@ classdef ThermoModel < BottleRocket
         discharge;
         stage = 1;
         ID = 3 + rand(1);
+        thrustvec = 0
     end
     methods
         function self = ThermoModel(ri, theta, m_water, V_air,...
@@ -23,7 +24,7 @@ classdef ThermoModel < BottleRocket
             self.x = ri(1);
             self.y = ri(2);
             self.z = ri(3);
-            self.initialheading = [0 cos(theta) sin(theta)];
+            self.initialheading = [0 cosd(theta) sind(theta)];
             
             self.m_water = m_water;
             self.V_air = V_air;
@@ -40,9 +41,9 @@ classdef ThermoModel < BottleRocket
             self.mu = mu;
             self.discharge = c_discharge;
             
-            self.T_atm = T_atm + 273.15;
+            self.T_atm = T_atm;
             self.P_atm = P_atm;
-            self.rho_atm = P_atm / (self.R * self.T_atm);
+            self.rho_atm = P_atm / (self.R * T_atm);
             self.wind_data = wind;
         end
         function setstage(self)
@@ -212,6 +213,7 @@ classdef ThermoModel < BottleRocket
                     Tmag = 0;
             end
             T = Tmag * dir;
+            self.thrustvec = [self.thrustvec;Tmag];
         end
         function m = mass(self, all)
             if ~all

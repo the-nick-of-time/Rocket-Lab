@@ -21,9 +21,9 @@ classdef IspModel < BottleRocket
             self.A = A;
             self.mu = mu;
             
-            self.T_atm = T_atm + 273.15;
+            self.T_atm = T_atm;
             self.P_atm = P_atm;
-            self.rho_atm = self.P_atm / (self.R * self.T_atm);
+            self.rho_atm = self.P_atm / (self.R * T_atm);
             self.wind_data = wind;
         end
         function m = mass(self, ~)
@@ -73,7 +73,8 @@ classdef IspModel < BottleRocket
                     'vy', 'y velocity';
                     'vz', 'z velocity';
                     'v', 'speed';
-                    't', 'time'};
+                    't', 'time';
+                    'm', 'mass'};
             [~, v] = self.normalizeV(false);
             vars = {self.x;
                     self.y;
@@ -82,7 +83,8 @@ classdef IspModel < BottleRocket
                     self.vy;
                     self.vz;
                     v;
-                    self.t};
+                    self.t;
+                    self.mass() * ones(length(self.t), 1)};
             titles = {'Cross Range Distance';
                       'Range Distance';
                       'Height';
@@ -90,7 +92,8 @@ classdef IspModel < BottleRocket
                       'Range Velocity';
                       'Vertical Velocity';
                       'Speed';
-                      'Time'};
+                      'Time';
+                      'Mass'};
             units = {'m';
                      'm';
                      'm';
@@ -98,7 +101,8 @@ classdef IspModel < BottleRocket
                      'm/s';
                      'm/s';
                      'm/s';
-                     's'};
+                     's';
+                     'kg'};
         end
         function rv = initialconditions(self)
             rv = [ self.vx;

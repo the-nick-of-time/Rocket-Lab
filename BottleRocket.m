@@ -36,6 +36,7 @@ classdef (Abstract=true) BottleRocket < handle
         function dvdt = vdot(self)
             dvdt = (self.thrust() + self.drag() + self.weight() + ...
                 self.friction()) / self.mass(false);
+            %dot(dvdt, self.normalizeV(true))
         end
         function [vhat, vmag] = normalizeV(self, onlyLatest)
             if onlyLatest
@@ -169,6 +170,7 @@ classdef (Abstract=true) BottleRocket < handle
             
             if nargin == 7
                 fig = outfig;
+                hold on
             else
                 fig = figure(figureargs{:});
             end
@@ -182,6 +184,8 @@ classdef (Abstract=true) BottleRocket < handle
             xlabel(XLABEL)
             ylabel(YLABEL)
             zlabel(ZLABEL)
+            
+            hold off
             
             print(fig, '-dpng', ['./figures/' TITLE '.png'])
         end

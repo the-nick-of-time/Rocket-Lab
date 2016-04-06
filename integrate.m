@@ -7,7 +7,8 @@ switch floor(rocket.type())
     case 2
         % Thrust model
         opts = odeset('Events', @rocket.endcondition,...
-            'MaxStep', .0025);
+            'MaxStep', .0025,...
+            'NonNegative', [7]);
     case 3
         % Thermodynamic model
         opts = odeset('NonNegative', [7 8 9],...

@@ -1,6 +1,7 @@
 clear
 close all
 clc
+path(path, 'C:\Users\Nicholas\Documents\MATLAB\MATLAB-customs')
 %%
 % objects = [statictest];
 % for i = 4:-1:1
@@ -11,43 +12,104 @@ clc
 %     objects(i).deltaV()
 % end
 %%
+files = {'./TUNNEL/Group17_test1.txt'};
+data = windtunneldata(files);
+
+A = .008659;
+[c_d, stdcd] = calculateCd(data, A);
+
+%%
 samplefreq = 1.652e3;
 m_bottle = .085;
 m_water_test = 1;
 static = statictest('./STATIC/LAtest2', samplefreq, m_bottle, m_water_test);
 % static.makeplot()
-
+%%
 initialpos = [0 0 .1];
-theta = 45;
-c_d = .2;
-A = .008659;
-mu = .2;
-T_atm = 20;
-P_atm = 84000;
-wind = [0 0 0 0;30 0 0 20];
+theta = 40;
+mu = .1;
+T_atm = 20 + 273.15;
+P_atm = 84 * 1e3;
+wind = [0 0 0 0;0 0 0 20];
 isp = IspModel(static, initialpos, theta, m_bottle, c_d, A, mu,...
                 T_atm, P_atm, wind);
-integrate(isp)
+% ispland = integrate(isp)
 
 % isp.makeplot('t', 'z', {'Position', [100 100 900 700]}, {});
 % isp.makeplot('t', 'v', {'Position', [100 100 900 700]}, {});
-isp.makeplot3d('x', 'y', 'z', {'Position', [100 100 900 700]}, {});
-
+% isp.makeplot3d('x', 'y', 'z', {'Position', [100 100 900 700]}, {});
+% isp.makeplot('t', 'm', {'Position', [100 100 900 700]}, {});
+%%
 P_bottle = 40 * 6894.75729;
 m_water = 1;
 thrust = ThrustModel(static, initialpos, theta, m_bottle, c_d, A, mu,...
     T_atm, P_atm, m_water, P_bottle, wind);
-integrate(thrust)
+% thrustland = integrate(thrust)
 
 % thrust.makeplot('t', 'z', {'Position', [100 100 900 700]}, {});
 % thrust.makeplot('t', 'v', {'Position', [100 100 900 700]}, {});
-thrust.makeplot3d('x', 'y', 'z', {'Position', [100 100 900 700]}, {});
-
+% thrust.makeplot3d('x', 'y', 'z', {'Position', [100 100 900 700]}, {});
+% thrust.makeplot('t', 'm', {'Position', [100 100 900 700]}, {});
+%%
 V_air = 1 * 1e-3;
 c_discharge = .8;
 thermo = ThermoModel(initialpos, theta, m_water, V_air, P_bottle, ...
     m_bottle, c_d, A, mu, T_atm, P_atm, c_discharge, wind);
-integrate(thermo)
+% thermoland = integrate(thermo)
 
-thermo.makeplot3d('x', 'y', 'z', {'Position', [100 100 900 700]}, {});
+% thermo.makeplot3d('x', 'y', 'z', {'Position', [100 100 900 700]}, {});
+% thermo.makeplot('t', 'm', {'Position', [100 100 900 700]}, {});
 % thermo.makeplot('t', 'z', {'Position', [100 100 900 700]}, {});
+
+%% monte carlo
+mbvar = 1e-3;
+posvar = [.01 .01 .01];
+thetavar = 2;
+muvar = .05;
+Tvar = 2;
+P_avar = 1e3;
+windvar = [1 1 1 0;1 1 1 0];
+Pvar = 2 * 6894.75729;
+mwvar = 3e-3;
+Vvar = .1 * 1e-3;
+dischargevar = .1;
+Avar = .0001;
+
+montecarlo(1, 50, static,...
+    'm_bottle', m_bottle, mbvar,...
+    'position', initialpos, posvar,...
+    'theta', theta, thetavar,...
+    'mu', mu, muvar,...
+    'T_atm', T_atm, Tvar,...
+    'P_atm', P_atm, P_avar,...
+    'wind', wind, windvar,...
+    'c_d', c_d, stdcd,...
+    'A', A, Avar)
+
+montecarlo(2, 50, static,...
+    'm_bottle', m_bottle, mbvar,...
+    'position', initialpos, posvar,...
+    'theta', theta, thetavar,...
+    'mu', mu, muvar,...
+    'T_atm', T_atm, Tvar,...
+    'P_atm', P_atm, P_avar,...
+    'wind', wind, windvar,...
+    'c_d', c_d, stdcd,...
+    'A', A, Avar,...
+    'm_w', m_water, mwvar,...
+    'p_bottle', P_bottle, Pvar)
+
+montecarlo(3, 50, static,...
+    'm_bottle', m_bottle, mbvar,...
+    'position', initialpos, posvar,...
+    'theta', theta, thetavar,...
+    'mu', mu, muvar,...
+    'T_atm', T_atm, Tvar,...
+    'P_atm', P_atm, P_avar,...
+    'wind', wind, windvar,...
+    'c_d', c_d, stdcd,...
+    'A', A, Avar,...
+    'm_w', m_water, mwvar,...
+    'p_bottle', P_bottle, Pvar,...
+    'V_a', V_air, Vvar,...
+    'discharge', c_discharge, dischargevar)

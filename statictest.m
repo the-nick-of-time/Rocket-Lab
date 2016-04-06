@@ -50,8 +50,6 @@ classdef statictest
             DF = F(end) - F(1);
             DT = length(range) / self.freq;
             base = (DF/DT) * time + F(1);
-%             hold on
-%             plot(time, base)
             
             I = 0;
 %             for x = ind
@@ -72,7 +70,7 @@ classdef statictest
             first = indices(1);
             DF = self.force(indices(end)) - self.force(1);
             DT = length(indices) / self.freq;
-            base = (DF/DT) * time + self.force(1);
+            base = (DF/DT) * time;
             if desiredindex > length(indices)
                 F = 0;
             else
@@ -106,8 +104,8 @@ classdef statictest
         end
         function DmDt = masschange(self)
             ind = self.isolate();
-            Dt = length(ind) * self.freq;
-            Dm = self.watermass;
+            Dt = length(ind) / self.freq;
+            Dm = -self.watermass;
             
             DmDt = Dm / Dt;
         end
