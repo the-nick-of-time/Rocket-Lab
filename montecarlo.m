@@ -1,4 +1,14 @@
-function montecarlo(type, many, static, varargin)
+function [landings, conditions] = montecarlo(type, many, static, varargin)
+% Performs Monte Carlo simulation of rocket paths
+% Inputs:
+%   type: 1, 2, or 3, the type of rocket to use
+%   many: how many simulations to perform
+%   static: a statictest object for use with the Isp and thrust models
+%   varargin: A number of variable name : mean value : standard variance
+%       triplets, enough to define the rocket
+% Outputs:
+%   landings: matrix of landing points
+%   conditions: the condition set associated with each landing point
 if mod(length(varargin), 3)
     error('You must define var:mean:sigma triplets')
 end
@@ -44,6 +54,7 @@ optsisp = { 'null';
 fig = figure('Position', [100 100 900 700]);
       
 landings = zeros(many, 2);
+conditions = cell(many, 1);
       
 ispinit = {static};
 thrustinit = {static};
@@ -74,24 +85,29 @@ for j = 1:many
             %Isp
             rocket = IspModel(ispinit{:});
             TITLE = 'I_{sp} Model';
+            conditions{j} = ispinit;
         case 2
             %thrust
             rocket = ThrustModel(thrustinit{:});
             TITLE = 'Thrust Model';
+            conditions{j} = thrustinit;
         case 3
             %thermo
             rocket = ThermoModel(thermoinit{:});
             TITLE = 'Thermodynamic Model';
+            conditions{j} = thermoinit;
     end
     try
         landing = integrate(rocket);
     catch
         warning('something bad happened, but whatever')
     end
+    
     landings(j,:) = landing(1:2);
     
     rocket.makeplot3d('x', 'y', 'z', {}, {}, fig);
 end
+
 figure('Position', [100 100 900 700])
 hold on
 
@@ -112,4 +128,8 @@ daspect([1 1 1])
 title(['Landing Points of the ' TITLE])
 xlabel('Cross Range Distance')
 ylabel('Range Distance')
+
+
+print(gcf, '-dpng', ['./figures/Landings ' TITLE '.png'])
+print(fig, '-dpng', ['./figures/' TITLE '.png'])
 end

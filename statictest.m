@@ -11,6 +11,14 @@ classdef statictest
     methods
         function self = statictest(filename, samplefreq, emptymass, ...
                 fuelmass)
+            % Class constructor
+            % Inputs:
+            %   filename: name of file to read data from
+            %   samplefreq: sampling frequency for the data
+            %   emptymass: mass of empty bottle
+            %   fuelmass: mass of water and air within bottle
+            % Outputs:
+            %   
             if nargin > 0
                 data = load(filename);
                 self.leftforce = data(:,1) * 4.44822;
@@ -22,12 +30,22 @@ classdef statictest
             end
         end
         function indices = isolate(self)
+            % Finds the indices at which thrust is happening
+            % Inputs:
+            %   none
+            % Outputs:
+            %   indices: the vector of relevant indices
             startpoint = find((self.force) > 20, 1);
             [~, highpoint] = max(self.force);
             [~, relativeendpoint] = min(self.force(highpoint:end));
             indices = startpoint:(startpoint+relativeendpoint);
         end
         function rv = getForce(self, which)
+            % Gets force data
+            % Inputs:
+            %   none
+            % Outputs:
+            %   which: left, right, or total
             if nargin == 1 || strcmpi(which, 't') || ...
                     strcmpi(which, 'total')
                 rv = self.totalforce;
@@ -43,6 +61,11 @@ classdef statictest
             end
         end
         function Isp = getImpulse(self)
+            % Integrates the thrust curve to get specific impulse
+            % Inputs:
+            %   none
+            % Outputs:
+            %   Isp: specific impulse imparted
             range = self.isolate();
             ind = 1:length(range);
             F = self.force(range);
@@ -51,20 +74,26 @@ classdef statictest
             DT = length(range) / self.freq;
             base = (DF/DT) * time + F(1);
             
-            I = 0;
+            %I = 0;
 %             for x = ind
 %                 % left Riemann sum 
 %                 I = I + (F(x) - base(x)) * (1 / self.freq);
 %             end
-            for x = ind(1:end-1)
-                % trapezoidal Riemann sum
-                I = I + .5 * (F(x) - base(x) + F(x+1) - ...
-                    base(x+1)) * (1 / self.freq);
-            end
+%             for x = ind(1:end-1)
+%                 % trapezoidal Riemann sum
+%                 I = I + .5 * (F(x) - base(x) + F(x+1) - ...
+%                     base(x+1)) * (1 / self.freq);
+%             end
+            I = trapz(F - base') / self.freq;
             % Assumes that the mass of the air is negligible
             Isp = I / (self.watermass * self.g);
         end
         function F = interpolate(self, time)
+            % Finds the thrust at any given time by linear interpolation
+            % Inputs:
+            %   none
+            % Outputs:
+            %   F: thrust force
             desiredindex = time * self.freq;
             indices = self.isolate();
             first = indices(1);
@@ -81,6 +110,11 @@ classdef statictest
             end
         end
         function makeplot(self, everything)
+            % Plots thrust against time
+            % Inputs:
+            %   none
+            % Outputs:
+            %   none
             figure
 
             if nargin == 1 || ~everything
@@ -96,13 +130,28 @@ classdef statictest
             ylabel('Force (N)')
         end
         function rv = change(self)
+            % Finds the spike value of the thrust
+            % Inputs:
+            %   none
+            % Outputs:
+            %   rv
             rv = max(diff(self.force));
         end
         function DV = deltaV(self)
+            % Finds the total velocity imparted to the rocket
+            % Inputs:
+            %   none
+            % Outputs:
+            %   DV: the delta V of the rocket by the ideal rocket equation
             DV = self.getImpulse() * self.g * ...
                 log((self.emptymass + self.watermass) / self.emptymass);
         end
         function DmDt = masschange(self)
+            % Finds the average rate of change of mass of the rocket
+            % Inputs:
+            %   none
+            % Outputs:
+            %   DmDt: average mass change rate 
             ind = self.isolate();
             Dt = length(ind) / self.freq;
             Dm = -self.watermass;

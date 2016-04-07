@@ -7,6 +7,24 @@ classdef ThrustModel < BottleRocket
     methods
         function self = ThrustModel(staticdata, ri, theta, m_bottle,...
                 c_d, A, mu, T_atm, P_atm, m_water, P_bottle, wind)
+            % Class constructor
+            % Inputs:
+            %   staticdata: the statictest object holding the data from the
+            %       static test stand
+            %   ri: initial position vector, should be [0 0 height]
+            %       definitionally
+            %   theta: launch angle, set by stand
+            %   m_bottle: mass of the empty bottle
+            %   c_d: drag coefficient
+            %   A: cross-sectional area of bottle
+            %   mu: coefficient of friction between bottle and launch stand
+            %   T_atm: temperature of ambient air
+            %   P_atm: atmospheric pressure
+            %   m_water: initial mass of water
+            %   P_bottle: initial pressure inside bottle
+            %   wind: matrix giving wind data
+            % Outputs:
+            %   None explicit
             self.vx = 0;
             self.vy = 0;
             self.vz = 0;
@@ -30,6 +48,11 @@ classdef ThrustModel < BottleRocket
             self.wind_data = wind;
         end
         function m = mass(self, all)
+            % Calculates mass of rocket
+            % Inputs:
+            %   none
+            % Outputs:
+            %   m: Total mass of rocket
             if ~all
                 m = self.m_fuel(end) + self.m_bottle;
             else
@@ -37,6 +60,12 @@ classdef ThrustModel < BottleRocket
             end
         end
         function dmdt = mdot(self)
+            % Returns mdot for integration
+            % Inputs:
+            %   none
+            % Outputs:
+            %   dmdt: time rate of change of mass
+            %
             % possibilities: 
             %   1. mdot is assumed constant throughout the duration of
             %   thrusting. this would need to verify the current value of T
@@ -45,11 +74,23 @@ classdef ThrustModel < BottleRocket
             dmdt = self.staticdata.masschange();
         end
         function T = thrust(self)
+            % Calculates thrust along the direction of the rocket's motion
+            % relative to the wind
+            % Inputs:
+            %   none
+            % Outputs:
+            %   T: thrust vector
             dir = self.relativeV();
             T = self.staticdata.interpolate(self.t(end)) * dir;
 %             disp([self.t(end) T])
         end
         function update(self, t, vars)
+            % Updates internal variables after an integration step
+            % Inputs:
+            %   t: time of integration
+            %   vars: variables of integration
+            % Outputs:
+            %   None explicit
             l = length(self.vx) + 1;
             self.vx(l,1) = vars(1);
             self.vy(l,1) = vars(2);
@@ -70,6 +111,13 @@ classdef ThrustModel < BottleRocket
             %   vy             y
             %   vz             z
             %  mdot           m_f
+            %
+            % Creates the vector of derivatives for ode45, as defined above
+            % Inputs:
+            %   t: time of integration
+            %   vars: variables of integration
+            % Outputs:
+            %   DYDT: vector of derivatives
             
             self.update(t, vars);
             
@@ -85,6 +133,14 @@ classdef ThrustModel < BottleRocket
                    ];
         end
         function [opts, vars, titles, units] = maps(self)
+            % Creates name:value maps for usage by the makeplot functions
+            % Inputs:
+            %   none
+            % Outputs:
+            %   opts: string pairs identifying which variable is which
+            %   vars: data vectors
+            %   titles: official names associated with variables
+            %   units: units of variable
             opts = {'x', 'crossrange';
                     'y', 'distance';
                     'z', 'height';
@@ -124,6 +180,11 @@ classdef ThrustModel < BottleRocket
                      's'};
         end
         function rv = initialconditions(self)
+            % Creates initial conditions vector
+            % Inputs:
+            %   none
+            % Outputs:
+            %   rv: initial conditions for integration
             rv = [ self.vx;
                    self.vy;
                    self.vz;
@@ -134,6 +195,13 @@ classdef ThrustModel < BottleRocket
                  ];
         end
         function finalize(self, t, vars)
+            % Overwrites the raw values of variables from the integration
+            % with cleaned, post-processed versions that are ode45's return
+            % value.
+            % Inputs:
+            %   none
+            % Outputs:
+            %   None explicit
             self.vx = vars(:,1);
             self.vy = vars(:,2);
             self.vz = vars(:,3);

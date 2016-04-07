@@ -18,6 +18,22 @@ classdef ThermoModel < BottleRocket
         function self = ThermoModel(ri, theta, m_water, V_air,...
                 P_bottle, m_bottle, c_d, A, mu, T_atm, P_atm, ...
                 c_discharge, wind)
+            % Class constructor
+            % Inputs:
+            %   ri: initial position vector, should be [0 0 height]
+            %       definitionally
+            %   theta: launch angle, set by stand
+            %   m_water: initial mass of water
+            %   V_air: initial volume occupied by air in bottle
+            %   P_bottle: initial pressure inside bottle
+            %   m_bottle: mass of the empty bottle
+            %   c_d: drag coefficient
+            %   A: cross-sectional area of bottle
+            %   mu: coefficient of friction between bottle and launch stand
+            %   T_atm: temperature of ambient air
+            %   P_atm: atmospheric pressure
+            %   c_discharge: discharge coefficient
+            %   wind: matrix giving wind data
             self.vx = 0;
             self.vy = 0;
             self.vz = 0;
@@ -47,6 +63,11 @@ classdef ThermoModel < BottleRocket
             self.wind_data = wind;
         end
         function setstage(self)
+            % Determines and updates which stage the model is in
+            % Inputs:
+            %   none
+            % Outputs:
+            %   None explicit
             switch self.stage
                 case 1
                     %water thrusting phase
@@ -69,6 +90,13 @@ classdef ThermoModel < BottleRocket
             end
         end
         function [p, pstar, p_t] = pressure(self)
+            % Calculates the internal pressure at any point
+            % Inputs:
+            %   none
+            % Outputs:
+            %   p: pressure of air inside bottle
+            %   pstar: critical pressure under current conditions
+            %   p_t: pressure at throat (unused, I think)
             switch self.stage
                 case 1
                     p = self.P_bottle_i * (self.V_air_i/self.V_air(end)) ^ self.gamma;
@@ -95,6 +123,12 @@ classdef ThermoModel < BottleRocket
             end
         end
         function dmdt = madot(self)
+            % Calculates the time rate of change of mass of air within the
+            % bottle
+            % Inputs:
+            %   none
+            % Outputs:
+            %   dmdt: time derivative of mass
             %[p,pstar]=pressurefn(t,vars);
             switch self.stage
                 case 1
@@ -124,6 +158,11 @@ classdef ThermoModel < BottleRocket
             end
         end
         function dmdt = mwdot(self)
+            % Calculates the time rate of change of water within the bottle
+            % Inputs:
+            %   none
+            % Outputs:
+            %   dmdt: time derivative of mass 
             switch self.stage
                 case 1
                     dmdt = -self.discharge * self.rho_water * ...
@@ -134,6 +173,12 @@ classdef ThermoModel < BottleRocket
             end
         end
         function dVdt = Vdot(self)
+            % Calculates the time rate of change of volume of air within
+            % bottle
+            % Inputs:
+            %   none
+            % Outputs:
+            %   dVdt: time derivative of volume
             switch self.stage
                 case 1
                     dVdt = self.discharge * self.A_throat * ...
@@ -155,6 +200,13 @@ classdef ThermoModel < BottleRocket
             %   m_a      madot
             %   m_w      mwdot
             %   V_a      Vdot
+            %
+            % Creates the vector of derivatives for ode45, as defined above
+            % Inputs:
+            %   t: time of integration
+            %   vars: variables of integration
+            % Outputs:
+            %   DYDT: vector of derivatives
             
             self.update(t, vars)
             self.setstage()
@@ -173,6 +225,12 @@ classdef ThermoModel < BottleRocket
                    ];
         end
         function update(self, t, vars)
+            % Updates internal variables after an integration step
+            % Inputs:
+            %   t: time of integration
+            %   vars: variables of integration
+            % Outputs:
+            %   None explicit
             l = length(self.vx) + 1;
             self.vx(l,1) = vars(1);
             self.vy(l,1) = vars(2);
@@ -187,6 +245,11 @@ classdef ThermoModel < BottleRocket
             self.t(l,1) = t;
         end
         function T = thrust(self)
+            % Calculates thrust vector along relative air velocity vector
+            % Inputs:
+            %   none
+            % Outputs:
+            %   T: thrust
             %[p, pstar] = self.pressure();
             dir = self.relativeV();            
             switch self.stage
@@ -216,6 +279,12 @@ classdef ThermoModel < BottleRocket
             self.thrustvec = [self.thrustvec;Tmag];
         end
         function m = mass(self, all)
+            % Calculates mass of rocket
+            % Inputs:
+            %   all: whether to get all data points or just the latest of
+            %       them
+            % Outputs:
+            %   m: mass of rocket
             if ~all
                 m = self.m_bottle + self.m_air(end) + self.m_water(end);
             else
@@ -223,6 +292,14 @@ classdef ThermoModel < BottleRocket
             end
         end
         function [opts, vars, titles, units] = maps(self)
+            % Creates name:value maps for usage by the makeplot functions
+            % Inputs:
+            %   none
+            % Outputs:
+            %   opts: string pairs identifying which variable is which
+            %   vars: data vectors
+            %   titles: official names associated with variables
+            %   units: units of variable
             opts = {'x', 'crossrange';
                     'y', 'distance';
                     'z', 'height';
@@ -274,6 +351,11 @@ classdef ThermoModel < BottleRocket
                      's'};
         end
         function rv = initialconditions(self)
+            % Creates initial conditions vector
+            % Inputs:
+            %   none
+            % Outputs:
+            %   rv: initial conditions for integration
             rv = [ self.vx;
                    self.vy;
                    self.vz;
@@ -286,6 +368,13 @@ classdef ThermoModel < BottleRocket
                  ];
         end
         function finalize(self, t, vars)
+            % Overwrites the raw values of variables from the integration
+            % with cleaned, post-processed versions that are ode45's return
+            % value.
+            % Inputs:
+            %   none
+            % Outputs:
+            %   None explicit
             self.vx = vars(:,1);
             self.vy = vars(:,2);
             self.vz = vars(:,3);

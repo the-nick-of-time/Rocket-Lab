@@ -6,6 +6,20 @@ classdef IspModel < BottleRocket
     methods
         function self = IspModel(data, ri, theta, m_bottle, c_d, A, mu,...
                 T_atm, P_atm, wind)
+            % Class constructor
+            % Inputs:
+            %   staticdata: the statictest object holding the data from the
+            %       static test stand
+            %   ri: initial position vector, should be [0 0 height]
+            %       definitionally
+            %   theta: launch angle, set by stand
+            %   m_bottle: mass of the empty bottle
+            %   c_d: drag coefficient
+            %   A: cross-sectional area of bottle
+            %   mu: coefficient of friction between bottle and launch stand
+            %   T_atm: temperature of ambient air
+            %   P_atm: atmospheric pressure
+            %   wind: matrix giving wind data
             self.staticdata = data;
             self.initialheading = [0 cosd(theta) sind(theta)];
             vi = self.staticdata.deltaV() * self.initialheading;
@@ -27,12 +41,28 @@ classdef IspModel < BottleRocket
             self.wind_data = wind;
         end
         function m = mass(self, ~)
-            m = self.m_bottle + self.rho_atm * self.volume;
+            % Calculates mass of rocket
+            % Inputs:
+            %   none
+            % Outputs:
+            %   m: Mass of rocket
+            m = self.m_bottle;
         end
         function T = thrust(~)
+            % Calculates thrust vector
+            % Inputs:
+            %   none
+            % Outputs:
+            %   T: The thrust vector
             T = [0 0 0];
         end
         function update(self, t, vars)
+            % Updates internal variables after an integration step
+            % Inputs:
+            %   t: time of integration
+            %   vars: variables of integration
+            % Outputs:
+            %   None explicit
             l = length(self.vx) + 1;
             self.vx(l,1) = vars(1);
             self.vy(l,1) = vars(2);
@@ -52,6 +82,13 @@ classdef IspModel < BottleRocket
             %   vy             y
             %   vz             z
             %  mdot            m
+            %
+            % Creates the vector of derivatives for ode45, as defined above
+            % Inputs:
+            %   t: time of integration
+            %   vars: variables of integration
+            % Outputs:
+            %   DYDT: vector of derivatives
             
             self.update(t, vars);
             
@@ -66,6 +103,14 @@ classdef IspModel < BottleRocket
                    ];
         end
         function [opts, vars, titles, units] = maps(self)
+            % Creates name:value maps for usage by the makeplot functions
+            % Inputs:
+            %   none
+            % Outputs:
+            %   opts: string pairs identifying which variable is which
+            %   vars: data vectors
+            %   titles: official names associated with variables
+            %   units: units of variable
             opts = {'x', 'crossrange';
                     'y', 'distance';
                     'z', 'height';
@@ -105,6 +150,11 @@ classdef IspModel < BottleRocket
                      'kg'};
         end
         function rv = initialconditions(self)
+            % Creates initial conditions vector
+            % Inputs:
+            %   none
+            % Outputs:
+            %   rv: initial conditions for integration
             rv = [ self.vx;
                    self.vy;
                    self.vz;
@@ -114,6 +164,13 @@ classdef IspModel < BottleRocket
                  ];
         end
         function finalize(self, t, vars)
+            % Overwrites the raw values of variables from the integration
+            % with cleaned, post-processed versions that are ode45's return
+            % value.
+            % Inputs:
+            %   none
+            % Outputs:
+            %   None explicit
             self.vx = vars(:,1);
             self.vy = vars(:,2);
             self.vz = vars(:,3);

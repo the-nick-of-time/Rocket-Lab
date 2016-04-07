@@ -1,9 +1,14 @@
 function landingpoint = integrate(rocket)
-
+% Integrates the model
+% Inputs:
+%   rocket: model object
+% Outputs:
+%   landingpoint: [x y z] coordinates of impact (z should always be 0)
 switch floor(rocket.type())
     case 1
         % Isp model
-        opts = odeset('Events', @rocket.endcondition);
+        opts = odeset('Events', @rocket.endcondition,...
+            'MaxStep', .1);
     case 2
         % Thrust model
         opts = odeset('Events', @rocket.endcondition,...
@@ -12,7 +17,8 @@ switch floor(rocket.type())
     case 3
         % Thermodynamic model
         opts = odeset('NonNegative', [7 8 9],...
-            'Events', @rocket.endcondition);
+            'Events', @rocket.endcondition,...
+            'MaxStep', .1);
 end
 trange = [0 20];
 [t, vars] = ode45(@rocket.derivatives, trange, ...
